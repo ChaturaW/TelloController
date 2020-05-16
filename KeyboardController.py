@@ -27,7 +27,7 @@ import threading
 import traceback
 from subprocess import Popen, PIPE
 
-
+screen = None
 prev_flight_data = None
 video_player = None
 video_recorder = None
@@ -99,10 +99,10 @@ def update_hud(hud, drone, flight_data):
         h += surface.get_height()
     h += 64  # add some padding
     overlay = pygame.Surface((w, h), pygame.SRCALPHA)
-    overlay.fill((0,0,0)) # remove for mplayer overlay mode
+    overlay.fill((90,90,90)) # remove for mplayer overlay mode
     for blit in blits:
         overlay.blit(*blit)
-    pygame.display.get_surface().blit(overlay, (0,0))
+    pygame.display.get_surface().blit(overlay, (40,40))
     pygame.display.update(overlay.get_rect())
 
 def status_print(text):
@@ -126,8 +126,10 @@ def flightDataHandler(event, sender, data):
 
 def video_thread():
     global drone
-    global run_video_thread
+    #global run_video_thread
     global av
+    global screen
+
     print('?????????? START Video thread')
     drone.start_video()
     try:
@@ -140,9 +142,16 @@ def video_thread():
                 # skip first 300 frames                                                                                                                                                        
                 #if frame_count < 300:
                 #    continue
-                image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
-                cv2.imshow('Original', image)
+                #image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                image = numpy.array(frame.to_image())
+                image = image.swapaxes(0,1)
+                #cv2.imshow('Original', image)
                 #cv2.imshow('Canny', cv2.Canny(image, 100, 200))
+                #cv2.waitKey(1)
+                #image = cv2.flip(image, 0)
+                image = pygame.surfarray.make_surface(image)
+                screen.blit(image, (180,0))
+                pygame.display.update()
                 cv2.waitKey(1)
         cv2.destroyWindow('Original')
     except KeyboardInterrupt as e:
@@ -153,9 +162,10 @@ def video_thread():
         print("?????????? EXCEPTION Video thread " + e)
 
 def main():
+    global screen
     pygame.init()
     pygame.display.init()
-    pygame.display.set_mode((1280, 720))
+    screen = pygame.display.set_mode((1280, 720))
     pygame.font.init()
 
     global font
@@ -165,6 +175,9 @@ def main():
     if 'window' in pygame.display.get_wm_info():
         wid = pygame.display.get_wm_info()['window']
     print("Tello video WID:", wid)
+
+    screen.fill((90, 90, 90))
+    pygame.display.update()
 
     global drone
     drone = tellopy.Tello()
