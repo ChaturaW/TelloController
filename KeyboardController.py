@@ -28,6 +28,8 @@ import traceback
 from subprocess import Popen, PIPE
 
 screen = None
+stop_video_thread = False
+videoThread = None
 prev_flight_data = None
 video_player = None
 video_recorder = None
@@ -40,8 +42,18 @@ def palm_land(drone, speed):
         return
     drone.palm_land()
 
+def exit_app(drone):
+    global stop_video_thread
+    print("Attempting to stop the application..")
+    drone.quit() 
+    stop_video_thread = True
+    #time.sleep(5)
+    print("Exiting application..")
+       
+    sys.exit()
+
 controls = {
-    'w': lambda drone, speed: drone.up(speed*2),
+    'w': lambda drone, speed: drone.up(speed*speedX),
     's': lambda drone, speed: drone.down(speed*2),
     'a': lambda drone, speed: drone.counter_clockwise(speed*2),
     'd': lambda drone, speed: drone.clockwise(speed*2),
@@ -56,9 +68,10 @@ controls = {
     'up': lambda drone, speed: drone.forward(speed*2), #'forward',
     'down': lambda drone, speed: drone.backward(speed*2), #'backward',
     'tab': lambda drone, speed: drone.takeoff(),
-    'backspace': lambda drone, speed: drone.land(),
-    'p': palm_land    
+    'backspace': lambda drone, speed: drone.land(),    
+    'p': palm_land           
 }
+
 
 class FlightDataDisplay(object):
     # previous flight data value and surface to overlay
@@ -96,13 +109,13 @@ def update_hud(hud, drone, flight_data):
             continue
         blits += [(surface, (0, h))]
         # w = max(w, surface.get_width())
-        h += surface.get_height()
+        h += (surface.get_height() + 20)
     h += 64  # add some padding
     overlay = pygame.Surface((w, h), pygame.SRCALPHA)
-    overlay.fill((90,90,90)) # remove for mplayer overlay mode
+    overlay.fill((21,27,31)) # remove for mplayer overlay mode
     for blit in blits:
         overlay.blit(*blit)
-    pygame.display.get_surface().blit(overlay, (40,40))
+    pygame.display.get_surface().blit(overlay, (20,20))
     pygame.display.update(overlay.get_rect())
 
 def status_print(text):
@@ -125,10 +138,10 @@ def flightDataHandler(event, sender, data):
         prev_flight_data = text
 
 def video_thread():
-    global drone
-    #global run_video_thread
+    global drone    
     global av
     global screen
+    global stop_video_thread
 
     print('?????????? START Video thread')
     drone.start_video()
@@ -137,6 +150,8 @@ def video_thread():
         container = av.open(drone.get_video_stream())
         frame_count = 0
         while True:
+            if stop_video_thread:
+                break    
             for frame in container.decode(video=0):
                 frame_count = frame_count + 1
                 # skip first 300 frames                                                                                                                                                        
@@ -152,7 +167,7 @@ def video_thread():
                 image = pygame.surfarray.make_surface(image)
                 screen.blit(image, (180,0))
                 pygame.display.update()
-                cv2.waitKey(1)
+                #cv2.waitKey(1)                             
         cv2.destroyWindow('Original')
     except KeyboardInterrupt as e:
         print("?????????? KEYBOARD INTERRUPT Video thread " + e)
@@ -164,19 +179,20 @@ def video_thread():
 def main():
     global screen
     pygame.init()
+    pygame.display.set_caption('CIS Drone Controller')
     pygame.display.init()
     screen = pygame.display.set_mode((1280, 720))
     pygame.font.init()
 
     global font
-    font = pygame.font.SysFont("dejavusansmono", 32)
+    font = pygame.font.SysFont("dejavusansmono", 28)
 
     global wid
     if 'window' in pygame.display.get_wm_info():
         wid = pygame.display.get_wm_info()['window']
     print("Tello video WID:", wid)
 
-    screen.fill((90, 90, 90))
+    screen.fill((21, 27, 31))
     pygame.display.update()
 
     global drone
@@ -186,8 +202,11 @@ def main():
     drone.subscribe(drone.EVENT_FLIGHT_DATA, flightDataHandler)    
     speed = 30
     
+    global stop_video_thread
+
     try:
-        threading.Thread(target=video_thread).start()
+        videoThread = threading.Thread(target=video_thread)
+        videoThread.start()
 
         while 1:
             time.sleep(0.01)  # loop with pygame.event.get() is too mush tight w/o some sleep
@@ -196,9 +215,8 @@ def main():
                 if e.type == pygame.locals.KEYDOWN:
                     print('+' + pygame.key.name(e.key))
                     keyname = pygame.key.name(e.key)
-                    if keyname == 'escape':
-                        drone.quit()
-                        exit(0)
+                    if keyname == 'b':
+                        exit_app(drone)                    
                     if keyname in controls:
                         key_handler = controls[keyname]
                         if type(key_handler) == str:
