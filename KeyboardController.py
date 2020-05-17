@@ -22,10 +22,10 @@ import av
 import cv2
 import numpy
 import os
-import datetime
+#import datetime
 import threading
 import traceback
-from subprocess import Popen, PIPE
+#from subprocess import Popen, PIPE
 
 screen = None
 stop_video_thread = False
@@ -53,20 +53,20 @@ def exit_app(drone):
     sys.exit()
 
 controls = {
-    'w': lambda drone, speed: drone.up(speed*speedX),
-    's': lambda drone, speed: drone.down(speed*2),
-    'a': lambda drone, speed: drone.counter_clockwise(speed*2),
-    'd': lambda drone, speed: drone.clockwise(speed*2),
+    'w': lambda drone, speed: drone.up(speed),
+    's': lambda drone, speed: drone.down(speed),
+    'a': lambda drone, speed: drone.counter_clockwise(speed),
+    'd': lambda drone, speed: drone.clockwise(speed),
     'space': 'up',
     'left shift': 'down',
     'right shift': 'down',
     'q': 'counter_clockwise',
     'e': 'clockwise',
     # arrow keys for fast turns and altitude adjustments
-    'left': lambda drone, speed: drone.left(speed*2), #'left',
-    'right': lambda drone, speed: drone.right(speed*2), #'right',
-    'up': lambda drone, speed: drone.forward(speed*2), #'forward',
-    'down': lambda drone, speed: drone.backward(speed*2), #'backward',
+    'left': lambda drone, speed: drone.left(speed), #'left',
+    'right': lambda drone, speed: drone.right(speed), #'right',
+    'up': lambda drone, speed: drone.forward(speed), #'forward',
+    'down': lambda drone, speed: drone.backward(speed), #'backward',
     'tab': lambda drone, speed: drone.takeoff(),
     'backspace': lambda drone, speed: drone.land(),    
     'p': palm_land           
@@ -145,8 +145,7 @@ def video_thread():
 
     print('?????????? START Video thread')
     drone.start_video()
-    try:
-        # threading.Thread(target=recv_thread).start()                                                                                                                                  
+    try:                                                                                                                                    
         container = av.open(drone.get_video_stream())
         frame_count = 0
         while True:
@@ -156,18 +155,12 @@ def video_thread():
                 frame_count = frame_count + 1
                 # skip first 300 frames                                                                                                                                                        
                 #if frame_count < 300:
-                #    continue
-                #image = cv2.cvtColor(numpy.array(frame.to_image()), cv2.COLOR_RGB2BGR)
+                #    continue                
                 image = numpy.array(frame.to_image())
-                image = image.swapaxes(0,1)
-                #cv2.imshow('Original', image)
-                #cv2.imshow('Canny', cv2.Canny(image, 100, 200))
-                #cv2.waitKey(1)
-                #image = cv2.flip(image, 0)
+                image = image.swapaxes(0,1)                
                 image = pygame.surfarray.make_surface(image)
                 screen.blit(image, (180,0))
-                pygame.display.update()
-                #cv2.waitKey(1)                             
+                pygame.display.update()                                            
         cv2.destroyWindow('Original')
     except KeyboardInterrupt as e:
         print("?????????? KEYBOARD INTERRUPT Video thread " + e)
@@ -216,7 +209,16 @@ def main():
                     print('+' + pygame.key.name(e.key))
                     keyname = pygame.key.name(e.key)
                     if keyname == 'b':
-                        exit_app(drone)                    
+                        exit_app(drone) 
+                    if keyname == 'i':
+                        print("speed - 30")
+                        speed = 30
+                    if keyname == 'o':
+                        print("speed - 60")
+                        speed = 60
+                    if keyname == 'p':
+                        print("speed - 120")
+                        speed = 120                       
                     if keyname in controls:
                         key_handler = controls[keyname]
                         if type(key_handler) == str:
