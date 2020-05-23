@@ -193,7 +193,7 @@ def main():
     drone.connect()
     #drone.start_video()
     drone.subscribe(drone.EVENT_FLIGHT_DATA, flightDataHandler)    
-    speed = 30
+    speed = 60
     
     global stop_video_thread
 
