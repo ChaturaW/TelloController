@@ -154,8 +154,8 @@ def video_thread():
             for frame in container.decode(video=0):
                 frame_count = frame_count + 1
                 # skip first 300 frames                                                                                                                                                        
-                #if frame_count < 300:
-                #    continue                
+                if frame_count < 300:
+                   continue                
                 image = numpy.array(frame.to_image())
                 image = image.swapaxes(0,1)                
                 image = pygame.surfarray.make_surface(image)
