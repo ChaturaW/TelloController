@@ -19,7 +19,7 @@ import pygame.key
 import pygame.locals
 import pygame.font
 import av
-import cv2
+#import cv2
 import numpy
 import os
 #import datetime
@@ -161,7 +161,7 @@ def video_thread():
                 image = pygame.surfarray.make_surface(image)
                 screen.blit(image, (180,0))
                 pygame.display.update()                                            
-        cv2.destroyWindow('Original')
+        #cv2.destroyWindow('Original')
     except KeyboardInterrupt as e:
         print("?????????? KEYBOARD INTERRUPT Video thread " + e)
     except Exception as e:
@@ -210,13 +210,13 @@ def main():
                     keyname = pygame.key.name(e.key)
                     if keyname == 'b':
                         exit_app(drone) 
-                    if keyname == 'i':
+                    if keyname == 'j':
                         print("speed - 30")
                         speed = 30
-                    if keyname == 'o':
+                    if keyname == 'k':
                         print("speed - 60")
                         speed = 60
-                    if keyname == 'p':
+                    if keyname == 'l':
                         print("speed - 120")
                         speed = 120                       
                     if keyname in controls:
